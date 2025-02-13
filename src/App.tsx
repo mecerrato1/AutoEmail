@@ -1,5 +1,27 @@
-import React, { useState, ChangeEvent, FormEvent } from 'react';
+import React, { useState, ChangeEvent, FormEvent, forwardRef } from 'react';
 import { EmailFormData } from './types';
+import {
+  Box,
+  Container,
+  Stack,
+  Heading,
+  Input,
+  Textarea,
+  Button,
+  Text,
+  StackProps,
+} from '@chakra-ui/react';
+import { FormControl, FormLabel } from '@chakra-ui/form-control';
+import { motion, HTMLMotionProps } from 'framer-motion';
+
+// Properly type the MotionBox
+type MotionBoxProps = HTMLMotionProps<'div'> & {
+  children: React.ReactNode;
+};
+
+const MotionBox = forwardRef<HTMLDivElement, MotionBoxProps>((props, ref) => (
+  motion.div({ ...props, ref })
+));
 
 function App() {
   const [formData, setFormData] = useState<EmailFormData>({
@@ -7,6 +29,7 @@ function App() {
     message: '',
     recipients: null,
   });
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleInputChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -20,83 +43,136 @@ function App() {
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
-    setFormData((prev) => ({
-      ...prev,
-      recipients: file,
-    }));
+    if (file && file.type === 'text/csv') {
+      setFormData((prev) => ({
+        ...prev,
+        recipients: file,
+      }));
+    } else {
+      if (e.target) {
+        e.target.value = '';
+      }
+    }
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Add your email sending logic here
-    console.log('Form submitted:', formData);
+    if (!formData.subject || !formData.message || !formData.recipients) {
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // TODO: Implement email sending logic here
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    } catch (error) {
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 py-6 flex flex-col justify-center sm:py-12">
-      <div className="relative py-3 sm:max-w-xl sm:mx-auto">
-        <div className="relative px-4 py-10 bg-white mx-8 md:mx-0 shadow rounded-3xl sm:p-10">
-          <div className="max-w-md mx-auto">
-            <div className="divide-y divide-gray-200">
-              <div className="py-8 text-base leading-6 space-y-4 text-gray-700 sm:text-lg sm:leading-7">
-                <h1 className="text-2xl font-bold mb-8 text-center">Email Sender</h1>
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Subject
-                      <input
-                        type="text"
-                        name="subject"
-                        value={formData.subject}
-                        onChange={handleInputChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                        required
-                      />
-                    </label>
-                  </div>
+    <Box
+      minH="100vh"
+      bgGradient="linear(120deg, #fdfbfb 0%, #ebedee 100%)"
+      py={12}
+      px={4}
+    >
+      <Container maxW="container.md">
+        <MotionBox
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <Box
+            bg="white"
+            borderRadius="xl"
+            p={8}
+            boxShadow="xl"
+          >
+            <Stack>
+              <Heading
+                as="h1"
+                size="xl"
+                fontWeight="light"
+                textAlign="center"
+                color="gray.700"
+              >
+                Bulk Email Sender
+              </Heading>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Message
-                      <textarea
-                        name="message"
-                        value={formData.message}
-                        onChange={handleInputChange}
-                        rows={4}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                        required
-                      />
-                    </label>
-                  </div>
+              <form onSubmit={handleSubmit}>
+                <Stack>
+                  <FormControl isRequired>
+                    <FormLabel>Subject</FormLabel>
+                    <Input
+                      name="subject"
+                      value={formData.subject}
+                      onChange={handleInputChange}
+                      placeholder="Enter email subject"
+                      size="lg"
+                      variant="outline"
+                    />
+                  </FormControl>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Recipients CSV
-                      <input
-                        type="file"
-                        accept=".csv"
-                        onChange={handleFileChange}
-                        className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-                        required
-                      />
-                    </label>
-                  </div>
+                  <FormControl isRequired>
+                    <FormLabel>Message</FormLabel>
+                    <Textarea
+                      name="message"
+                      value={formData.message}
+                      onChange={handleInputChange}
+                      placeholder="Enter your message here..."
+                      size="lg"
+                      variant="outline"
+                      rows={6}
+                    />
+                  </FormControl>
 
-                  <div className="pt-4">
-                    <button
-                      type="submit"
-                      className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                    >
-                      Send Emails
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+                  <FormControl isRequired>
+                    <FormLabel>Recipients</FormLabel>
+                    <Input
+                      type="file"
+                      accept=".csv"
+                      onChange={handleFileChange}
+                      variant="outline"
+                      size="lg"
+                      css={{
+                        '::file-selector-button': {
+                          border: 'none',
+                          backgroundColor: '#EBF8FF',
+                          color: '#2B6CB0',
+                          fontWeight: '500',
+                          marginRight: '1rem',
+                          cursor: 'pointer',
+                          padding: '0.5rem 1rem',
+                        }
+                      }}
+                    />
+                    <Text fontSize="sm" color="gray.500" mt={2}>
+                      Upload a CSV file containing email addresses
+                    </Text>
+                  </FormControl>
+
+                  <Button
+                    type="submit"
+                    colorScheme="blue"
+                    size="lg"
+                    width="full"
+                    loading={isLoading}
+                    loadingText="Sending..."
+                    _hover={{ transform: 'translateY(-2px)', boxShadow: 'lg' }}
+                    _active={{ transform: 'translateY(0)' }}
+                    transition="all 0.2s"
+                  >
+                    Send Emails
+                  </Button>
+                </Stack>
+              </form>
+            </Stack>
+          </Box>
+        </MotionBox>
+      </Container>
+    </Box>
   );
 }
 
